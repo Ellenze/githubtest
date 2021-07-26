@@ -1,0 +1,23 @@
+{
+	"name": "az_adls_productlist",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "az_adls_workshop_datalake",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": "productlist.csv",
+				"container": "product"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"quoteChar": "\""
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

@@ -1,0 +1,55 @@
+{
+	"name": "dataflow1",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "az_sql_adventurework_100products",
+						"type": "DatasetReference"
+					},
+					"name": "product"
+				},
+				{
+					"dataset": {
+						"referenceName": "az_sql_adventurework_productsubcategory",
+						"type": "DatasetReference"
+					},
+					"name": "subcategory"
+				},
+				{
+					"dataset": {
+						"referenceName": "az_sql_adventurework_productcategory",
+						"type": "DatasetReference"
+					},
+					"name": "category"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "az_adls_productcategory",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "Join1"
+				},
+				{
+					"name": "Select1"
+				},
+				{
+					"name": "Join2"
+				},
+				{
+					"name": "Select2"
+				}
+			],
+			"script": "source(output(\n\t\tProductID as integer,\n\t\tName as string,\n\t\tProductNumber as string,\n\t\tMakeFlag as boolean,\n\t\tFinishedGoodsFlag as boolean,\n\t\tColor as string,\n\t\tSafetyStockLevel as integer,\n\t\tReorderPoint as integer,\n\t\tStandardCost as decimal(19,4),\n\t\tListPrice as decimal(19,4),\n\t\tSize as string,\n\t\tSizeUnitMeasureCode as string,\n\t\tWeightUnitMeasureCode as string,\n\t\tWeight as decimal(8,2),\n\t\tDaysToManufacture as integer,\n\t\tProductLine as string,\n\t\tClass as string,\n\t\tStyle as string,\n\t\tProductSubcategoryID as integer,\n\t\tProductModelID as integer,\n\t\tSellStartDate as timestamp,\n\t\tSellEndDate as timestamp,\n\t\tDiscontinuedDate as timestamp,\n\t\trowguid as string,\n\t\tModifiedDate as timestamp\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tquery: 'select * from [production].product\\nwhere productsubcategoryID is not null',\n\tformat: 'query') ~> product\nsource(output(\n\t\tProductSubcategoryID as integer,\n\t\tProductCategoryID as integer,\n\t\tName as string,\n\t\trowguid as string,\n\t\tModifiedDate as timestamp\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> subcategory\nsource(output(\n\t\tProductCategoryID as integer,\n\t\tName as string,\n\t\trowguid as string,\n\t\tModifiedDate as timestamp\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> category\nsubcategory, category join(subcategory@ProductCategoryID == category@ProductCategoryID,\n\tjoinType:'left',\n\tbroadcast: 'auto')~> Join1\nJoin1 select(mapColumn(\n\t\tProductSubcategoryID,\n\t\tSubcategory = subcategory@Name,\n\t\tCategory = category@Name\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: false) ~> Select1\nproduct, Select1 join(product@ProductSubcategoryID == Select1@ProductSubcategoryID,\n\tjoinType:'left',\n\tbroadcast: 'auto')~> Join2\nJoin2 select(mapColumn(\n\t\tProductID,\n\t\tName,\n\t\tProductNumber,\n\t\tMakeFlag,\n\t\tFinishedGoodsFlag,\n\t\tColor,\n\t\tListPrice,\n\t\tSize,\n\t\tProductLine,\n\t\tClass,\n\t\tStyle,\n\t\tSubcategory,\n\t\tCategory\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> Select2\nSelect2 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tpartitionFileNames:['productcategory.csv'],\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tpartitionBy('hash', 1)) ~> sink1"
+		}
+	}
+}

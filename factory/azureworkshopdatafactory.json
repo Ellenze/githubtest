@@ -1,0 +1,17 @@
+{
+	"name": "azureworkshopdatafactory",
+	"properties": {
+		"globalParameters": {
+			"Globalpara_csv": {
+				"type": "string",
+				"value": "\".csv\""
+			}
+		}
+	},
+	"location": "canadacentral",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "90b57f76-b4d6-449d-a759-3de73238443c",
+		"tenantId": "22c202c2-382c-447b-a023-d0a866d1d426"
+	}
+}
